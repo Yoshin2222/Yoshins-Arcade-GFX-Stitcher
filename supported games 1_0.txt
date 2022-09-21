@@ -1,0 +1,41 @@
+			--------SUPPORTED GAMES AS OF 1.0---------------
+			aof - Art of Fighting
+			aof2 - Art of Fighting 2
+			aof3 - Art of Fighting 3
+			armwar - Armoured Warriors
+			breakrev - Breakers Revenge
+			cybots - Cyberbots: Fullmetal Madness
+			ddsom - Dungeons & Dragons: Shadow Over Mystara
+			ddtod - Dungeons & Dragons: Tower of Doom
+			doubledr - Double Dragon (Neo-Geo)
+			dstlk - Darkstalkers: The Night Warriors
+			garoup - Garou: Mark of the Wolves (prototype)
+			gowcaizr - Voltage Fighter Gowcaizer
+			kizuna - Kizuna Encounter
+			kof94 - King of Fighters 94
+			kof95 - King of Fighters 95
+			kof96 - King of Fighters 96
+			kof97 - King of Fighters 97
+			kof98 - King of Fighters 98
+			lastbld2 - Last Blade 2
+			magdrop3 - Magical Drop 3
+			msh - Marvel SuperHeroes
+			mshvsf - Marvel Superheroes VS Street Fighter
+			mslug - Metal Slug
+			mvsc - Marvel VS Capcom: Clash of Superheroes
+			nwarr - Night Warriors: Darkstalkers Revenge
+			rbff2 - Real Bout: Fatal Fury 2
+			samsho2 - Samurai Shodown 2
+			samsho3 - Samurai Shodown 3
+			samsho4 - Samurai Shodown 4
+			sfa2 - Street Fighter Alpha 2
+			sfa3 - Street Fighter Alpha 3
+			sgemf - Super Gem Fighter
+			ssf2t - Super Street Fighter 2 Turbo
+			vsav - Vampire Saviour: The Lord of Vampire
+			wakuwak7 - Waku Waku 7
+			wh1 - World Heroes 1
+			xmcota - X-Men: Children of the Atom
+			xmvsf - X-Men VS Street Fighter
+
+
