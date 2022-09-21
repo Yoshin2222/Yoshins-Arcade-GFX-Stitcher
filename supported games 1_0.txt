@@ -9,9 +9,13 @@
 			ddtod - Dungeons & Dragons: Tower of Doom
 			doubledr - Double Dragon (Neo-Geo)
 			dstlk - Darkstalkers: The Night Warriors
+			ffight - Final Fight
+			galaxyfg - Galaxy Fight: Universal Warriors
 			garoup - Garou: Mark of the Wolves (prototype)
+			ghouls - Ghouls 'N Ghosts
 			gowcaizr - Voltage Fighter Gowcaizer
 			kizuna - Kizuna Encounter
+			knights - Knights of the Round
 			kof94 - King of Fighters 94
 			kof95 - King of Fighters 95
 			kof96 - King of Fighters 96
@@ -25,14 +29,20 @@
 			mvsc - Marvel VS Capcom: Clash of Superheroes
 			nwarr - Night Warriors: Darkstalkers Revenge
 			rbff2 - Real Bout: Fatal Fury 2
+			samsho - Samurai Shodown/Samurai Spirits
 			samsho2 - Samurai Shodown 2
 			samsho3 - Samurai Shodown 3
 			samsho4 - Samurai Shodown 4
+			sf2 - Street Fighter 2: The World Warrior
+			sfa - Street Fighter Alpha
 			sfa2 - Street Fighter Alpha 2
 			sfa3 - Street Fighter Alpha 3
 			sgemf - Super Gem Fighter
 			ssf2t - Super Street Fighter 2 Turbo
+			strider - Strider
+			vhunt2 - Vampire Hunter 2
 			vsav - Vampire Saviour: The Lord of Vampire
+			vsav2 - Vampire Saviour 2: The Lord of Vampire
 			wakuwak7 - Waku Waku 7
 			wh1 - World Heroes 1
 			xmcota - X-Men: Children of the Atom

@@ -1,0 +1,51 @@
+--------21/09/2022: Rev 1.1--------
+CPS1 SUPPORT!
+	After bashing against that wall for a while, the stitcher
+	is now compatible with most CPS1 Games! There are fringe cases
+	like Forgotten Worlds where the Stitcher isn't suitable, but by
+	and large still usable with the majority of CPS1 games i've seen.
+	The only real distinction between adding a CPS1 game as opposed to
+	CPS2 is that there are a couple new vars to accomodate varying Group
+	Sizes, and how many bytes to interleave per group
+	For example, Final Fight is setup like this:
+	
+	gfx_prefix = ["ff-5m.7a", "ff-7m.9a", "ff-1m.3a", "ff-3m.5a"]
+
+	group_size = [4]
+	group_collec_size = [2]
+
+	#Total size of each ROM group
+	rsize0 = 2 << 18 #524288 bytes, or 512KB
+	rsize1 = 2 << 19 #1048576 bytes, or 1MB
+	rsize2 = 2 << 20 #2097152 bytes, or 2MB
+	rsize3 = 2 << 21 #4194304 bytes, or 4MB
+	rsize4 = 2 << 22 #8388608 bytes, or 8MB
+	gfx_romsize = [rsize0]
+	
+	This will probably be adjusted at some point to accomodate games like
+	Forgotten Worlds, but should still prove useful, i hope.
+
+NEO-GEO: PREFIX_OVERRIDE
+	In order to accomodate Samurai Shodown 1, adjusted the code
+	so now you can define a prefix_override array to read files of
+	varying cx prefixes. In the case of Samsho 1, it's prefix_override
+	looks like this
+
+	prefix_override = [1,2,3,4,51,61]
+
+	This indicates to the stitcher to read, in order,
+	c1.c1
+	c2.c2
+	c3.c3
+	c4.c4
+	c51.c5
+	c61.c6
+
+NEWLY SUPPORTED GAMES
+	ffight - Final Fight
+	ghouls - Ghouls 'N Ghosts
+	knights - Knights of the Round
+	samsho - Samurai Shodown/Samurai Spirits
+	sf2 - Street Fighter 2: The World Warrior
+	sfa - Street Fighter Alpha
+	strider - Strider

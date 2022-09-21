@@ -1,4 +1,5 @@
 #Used to navigate file directories
+from distutils.command.build_scripts import first_line_re
 import os
 import importlib
 import sys
@@ -51,13 +52,28 @@ inter_name = str(game_name).upper() + "_INTERLEAVED_GFX"
 
 print(inter_name)
 #Assign appropriate names/vars to be used later
+
+#NEO-GEO
 if res_file.System == "Neo-Geo":
-#    filename = ["{}-c{}.c{}".format(res_file.gfx_prefix[i].lower(), res_file.file_writes[i],res_file.file_writes[i]) for i in range(0, num_of_gfx_roms)]
-    filename = ["{}-c{}.c{}".format(res_file.gfx_prefix[i].lower(), i + 1,i + 1) for i in range(0, num_of_gfx_roms)]
+
+
+#Fuck you Samsho 1
+    try:
+        res_file.prefix_override
+    except: #Most games will return negative, only do prefix override stuff if the var exists
+        filename = ["{}-c{}.c{}".format(res_file.gfx_prefix[i].lower(), i + 1,i + 1) for i in range(0, num_of_gfx_roms)]
+#In the case of games like Samsho 1, you need to be additionally explicit in order to handle the weird c51/c61 prefixes
+    else:
+        filename = ["{}-c{}.c{}".format(res_file.gfx_prefix[i].lower(), res_file.prefix_override[i], i + 1) for i in range(0, num_of_gfx_roms)]        
+
+
+
+
+#CPS2
 if res_file.System == "CPS2":
     filename = ["{}.{}m".format(res_file.gfx_prefix[i], res_file.file_writes[i],res_file.file_writes[i]) for i in range(0, num_of_gfx_roms)]
-#-------------------------------NOT IMPLEMENTED YET!!!!!!!!!!!!-------------------------------
-if res_file.System == "CPS1":
+#CPS1
+if res_file.System == "CPS1" :
     filename = ["{}".format(res_file.gfx_prefix[i]) for i in range(0, num_of_gfx_roms)]
 
 #Display some info, mostly aesthetic if i'm honest
@@ -336,11 +352,211 @@ def write_m_files():
 
 #//////////////////// END OF CASE CPS2 ////////////////////
 
+
+def grab_CPS1_ROM_Data(i, k):
+#The CPS1 is slightly simpler than the CPS2 in the sense that
+#each pair of ROMs is interleaved on a WORD Basis, with the final
+#data storing a 16x16 tile from the first 2 ROMs, then the next 2,
+#back to the first and so on until all the data of the 4 ROMs is read
+#The CPS1 is weird in that groups can vary in size, whereas the CPS2
+#Is consistently 4. To accomodate this, 2 seperate loops are used, one
+#for if the group is 4, and the other 8
+
+#For groups of 4, the CPS1 loads the first tile as 32 alternating WORDs of data from the first
+#2 GFX ROMs, then 32 WORDs from the next pair, back to the first, and so on until
+#all the tiles are loaded
+    if res_file.group_size[k] == 4:
+        for l in range (0, res_file.gfx_romsize[k] >> 1,1):
+            tempfile[(i)+0] += gfx_file[i].read(res_file.group_collec_size[k])
+            tempfile[(i)+0] += gfx_file[i+1].read(res_file.group_collec_size[k])
+            tempfile[(i)+1] += gfx_file[i+2].read(res_file.group_collec_size[k])
+            tempfile[(i)+1] += gfx_file[i+3].read(res_file.group_collec_size[k])
+
+#When loading groups of 8, the first tile is comprised of Bytes from the first 4
+#GFX ROMs in the group, then the next tile uses bytes from the next 4, then the first
+#and so on. Fringe cases like Forgotten Worlds handles this a bit differently but this
+#is true for most CPS1 titles to my knowledge
+
+    if res_file.group_size[k] == 8:
+        for l in range (0, res_file.gfx_romsize[k],1):
+#        while l < ((res_file.gfx_romsize[k]) * (res_file.group_size[k])):
+#        l = 0
+#        while l < res_file.gfx_romsize[k] << 2:
+#        for l in range (0, res_file.gfx_romsize[k],1):
+            tempfile[(i)+0] += gfx_file[i].read(res_file.group_collec_size[k])
+            tempfile[(i)+0] += gfx_file[i+1].read(res_file.group_collec_size[k])
+            tempfile[(i)+0] += gfx_file[i+2].read(res_file.group_collec_size[k])
+            tempfile[(i)+0] += gfx_file[i+3].read(res_file.group_collec_size[k])
+            tempfile[(i)+1] += gfx_file[i+4].read(res_file.group_collec_size[k])
+            tempfile[(i)+1] += gfx_file[i+5].read(res_file.group_collec_size[k])
+            tempfile[(i)+1] += gfx_file[i+6].read(res_file.group_collec_size[k])
+            tempfile[(i)+1] += gfx_file[i+7].read(res_file.group_collec_size[k])
+
+
+#    ["-------------- table 0 --------------"]
+    print(filename[i],filename[i+1],"EVEN")
+#    ["-------------- table 1 --------------"]
+    print(filename[i],filename[i+1],"ODD")
+#    ["-------------- table 2 --------------"]
+    print(filename[i+2],filename[i+3],"EVEN")
+#    ["-------------- table 3 --------------"]
+    print(filename[i+2],filename[i+3],"ODD")
+
+    j = 0
+#Accomodate varying group sizes
+    print("grab k -", k)
+    print(res_file.group_size[k])
+    print(((res_file.gfx_romsize[k]) * (res_file.group_size[k])))
+    while j < ((res_file.gfx_romsize[k]) * (res_file.group_size[k])):
+        gfx_table[0] += tempfile[(i) + 0][j:j+64]
+        gfx_table[0] += tempfile[(i) + 1][j:j+64]
+        j += 64
+
+
+def cps1_de_interleave1(k, i):
+    j = 0
+#DE-INTERLEAVE A GROUP OF 4
+    if res_file.group_size[k] == 4:
+        print("De-Interleaving", filename[i], filename[i+1],filename[i+2],filename[i+3])
+        while j < (res_file.gfx_romsize[k]) << 2:
+    #Grab every 64 Byte chunk from the combined data
+            tempfile2[(i>>1) + 0] += tempfile3[(k)][j:j+64]
+            tempfile2[(i>>1) + 1] += tempfile3[(k)][j+64:j+128]
+            j += 128
+
+        for l in range (0, res_file.gfx_romsize[k] << 1,4):
+            gfx_table[i + 0] += tempfile2[(i>>1) + 0][l:l+2]
+            gfx_table[i + 1] += tempfile2[(i>>1) + 0][l+2:l+4]
+            gfx_table[i + 2] += tempfile2[(i>>1) + 1][l:l+2]
+            gfx_table[i + 3] += tempfile2[(i>>1) + 1][l+2:l+4]
+
+#DE-INTERLEAVE A GROUP OF 8
+    if res_file.group_size[k] == 8:
+        print("De-Interleaving", filename[i], filename[i+1],filename[i+2],filename[i+3], filename[i+4], filename[i+5],filename[i+6],filename[i+7])
+#        while j < (res_file.gfx_romsize[k]) << 2:
+        while j < (res_file.gfx_romsize[k]) << 3:
+    #Grab every 64 Byte chunk from the combined data
+            tempfile2[(i>>1) + 0] += tempfile3[(k)][j:j+64]
+            tempfile2[(i>>1) + 1] += tempfile3[(k)][j+64:j+128]
+            j += 128
+
+        l = 0
+        while l < res_file.gfx_romsize[k] << 2:
+#        for l in range (0, res_file.gfx_romsize[k] << 2,4):
+            gfx_table[i + 0] += tempfile2[(i>>1) + 0][l:l+1]
+            gfx_table[i + 1] += tempfile2[(i>>1) + 0][l+1:l+2]
+            gfx_table[i + 2] += tempfile2[(i>>1) + 0][l+2:l+3]
+            gfx_table[i + 3] += tempfile2[(i>>1) + 0][l+3:l+4]
+            gfx_table[i + 4] += tempfile2[(i>>1) + 1][l:l+1]
+            gfx_table[i + 5] += tempfile2[(i>>1) + 1][l+1:l+2]
+            gfx_table[i + 6] += tempfile2[(i>>1) + 1][l+2:l+3]
+            gfx_table[i + 7] += tempfile2[(i>>1) + 1][l+3:l+4]
+            l += 4
+
+
+#//////////////////// START OF CASE CPS2 ////////////////////
+def CASE_CPS1():
+#Based on the interleaver by Born2SPD
+#///// INTERLEAVE DATA ///////////////
+    if script_action == "1":
+   #Grab data for the interleaved GFX file
+#Seperate loops for groups of 4/8
+        k = -1
+        i = 0
+        while i < num_of_gfx_roms:
+#        for i in range (0, num_of_gfx_roms, res_file.group_size[k]):
+            while k < len(res_file.group_size) - 1:
+                k += 1 #Increment "Loop"
+#                print(res_file.group_size[k])
+#                print(i)
+#                print(k)
+                if res_file.group_size[k] == 4:
+                    with open (os.path.join(gamepath, filename[i]), "rb") as gfx_file[i]:
+                        with open (os.path.join(gamepath, filename[i+1]), "rb") as gfx_file[i+1]: 
+                            with open (os.path.join(gamepath, filename[i+2]), "rb") as gfx_file[i+2]:
+                                with open (os.path.join(gamepath, filename[i+3]), "rb") as gfx_file[i+3]: 
+                                    print("Interleaving", filename[i], filename[i+1],filename[i+2],filename[i+3])
+                                    grab_CPS1_ROM_Data(i, k)
+                if res_file.group_size[k] == 8:
+                    with open (os.path.join(gamepath, filename[i]), "rb") as gfx_file[i]:
+                        with open (os.path.join(gamepath, filename[i+1]), "rb") as gfx_file[i+1]: 
+                            with open (os.path.join(gamepath, filename[i+2]), "rb") as gfx_file[i+2]:
+                                with open (os.path.join(gamepath, filename[i+3]), "rb") as gfx_file[i+3]: 
+                                    with open (os.path.join(gamepath, filename[i+4]), "rb") as gfx_file[i+4]:
+                                        with open (os.path.join(gamepath, filename[i+5]), "rb") as gfx_file[i+5]: 
+                                            with open (os.path.join(gamepath, filename[i+6]), "rb") as gfx_file[i+6]:
+                                                with open (os.path.join(gamepath, filename[i+7]), "rb") as gfx_file[i+7]: 
+                                                    print("Interleaving", filename[i], filename[i+1],filename[i+2],filename[i+3], filename[i+4], filename[i+5],filename[i+6],filename[i+7])
+                                                    grab_CPS1_ROM_Data(i, k)
+
+                i += res_file.group_size[k] #Add to var to ensure the correct files are read
+
+        with open (os.path.join(gfxpath, inter_name), "wb") as Interleaved_GFX: 
+#            CPS2_Interleave_1048576()
+            print("----------------TABLE3----------------")
+            for i in range (0,len(tempfile3),1):
+                print(len(tempfile3[i]))
+            print("----------------TABLE2----------------")
+            for i in range (0,len(tempfile2),1):
+                print(len(tempfile2[i]))
+            print("----------------TABLE1----------------")
+            for i in range (0,len(tempfile),1):
+                print(len(tempfile[i]))
+            print("----------------OUTPUT----------------")
+            for i in range (0,len(gfx_table),1):
+                print(len(gfx_table[i]))
+            Interleaved_GFX.write(bytes(gfx_table[0]))
+#            Interleaved_GFX.write[tempfile3[0]]
+
+    #///// DE-INTERLEAVE DATA ////////////
+    if script_action == "2":
+    #Grab data from the interleaved GFX file
+#        for i in range (0, num_of_gfx_roms, 4):
+        k = -1
+        i = 0
+        h = 0
+
+        while i < num_of_gfx_roms:
+#        for i in range (0, num_of_gfx_roms, res_file.group_size[k]):
+            while k < len(res_file.group_size) - 1:
+                k += 1 #Increment "Loop"
+                with open (os.path.join(gfxpath, inter_name), "rb") as Interleaved_GFX:   
+            #      for i in range (0, num_of_gfx_roms, 2):
+            #         cps2_de_interleave1()
+                    #Grab the groups again to properly de-interleave data
+                    while h < len(res_file.group_size):
+                        tempfile3[h] += Interleaved_GFX.read((res_file.gfx_romsize[h]) * (res_file.group_size[h]))
+                        print(h)
+                        print(len(res_file.group_size) -1)
+                        print((res_file.gfx_romsize[h]) * res_file.group_size[h])
+                        print(res_file.group_size[h])
+                        h += 1
+
+                    cps1_de_interleave1(k,i)
+                    i += res_file.group_size[k] #Add to var to ensure the correct files are read
+                    print(i)
+        print("----------------TABLE3----------------")
+        for i in range (0,len(tempfile3),1):
+            print(len(tempfile3[i]))
+        print("----------------TABLE2----------------")
+        for i in range (0,len(tempfile2),1):
+            print(len(tempfile2[i]))
+        print("----------------TABLE1----------------")
+        for i in range (0,len(tempfile),1):
+            print(len(tempfile[i]))
+        print("----------------OUTPUT----------------")
+        for i in range (0,len(gfx_table),1):
+            print(len(gfx_table[i]))
+        write_m_files()
+
+#//////////////////// END OF CASE CPS1 ////////////////////
+
+
 #//////////////////// DECIDE WHAT TO DO WITH DATA ////////////////////
 if res_file.System == "Neo-Geo":
     CASE_NEO_GEO()
 
-if res_file.System == "CPS2":
+if res_file.System == "CPS1" or res_file.System == "CPS2" :
     #Generate required tables to store data
     tempfile = {}
     for i in range (0, num_of_gfx_roms, 1):
@@ -351,17 +567,20 @@ if res_file.System == "CPS2":
     tempfile3 = {}
     for i in range (0, num_of_gfx_roms>>2, 1):
         tempfile3.update({i : []})
-    CASE_CPS2()
+    if res_file.System == "CPS2":
+        CASE_CPS2()
+    if res_file.System == "CPS1":
+        CASE_CPS1()
 
-if res_file.System == "CPS1":
+#if res_file.System == "CPS1":
     #Generate required tables to store data
-    tempfile = {}
-    for i in range (0, num_of_gfx_roms, 1):
-        tempfile.update({i : []})
-    tempfile2 = {}
-    for i in range (0, num_of_gfx_roms >> 1, 1):
-        tempfile2.update({i : []})
-    tempfile3 = {}
-    for i in range (0, num_of_gfx_roms>>2, 1):
-        tempfile3.update({i : []})
-    CASE_CPS2()    
+#    tempfile = {}
+#    for i in range (0, num_of_gfx_roms, 1):
+#        tempfile.update({i : []})
+#    tempfile2 = {}
+#    for i in range (0, num_of_gfx_roms >> 1, 1):
+#        tempfile2.update({i : []})
+#    tempfile3 = {}
+#    for i in range (0, num_of_gfx_roms>>2, 1):
+#        tempfile3.update({i : []})
+#    CASE_CPS1()

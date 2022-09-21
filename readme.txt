@@ -113,3 +113,14 @@ Functionally, the interleaver reads the first group, which is sfx.13m, sfx.15m,
 sfx.17m and sfx.19m in that order, and this group is 2MB big. Note the size refers
 to an INDIVIDUAL ROM.
 After adding that, ya should be good to go!
+
+---------------------FOR CPS1---------------------
+As of 1.1, the stitcher now supports CPS1 Games! The structure of resources files is
+much and such the same as CPS2, the only real difference is the absence of file_writes,
+and that gfx_prefix requires every ROM name be explicit
+For example, Final Fight (ffight) has it's gfx_prefix setup like this
+
+gfx_prefix = ["ff-5m.7a", "ff-7m.9a", "ff-1m.3a", "ff-3m.5a"]
+
+Like the CPS2, ROMs are read in groups of 4, so each gfx_romsize accounts for 1 of the
+groups
