@@ -1,3 +1,33 @@
+--------11/01/2023: Rev 1.3--------
+######################### Improved PRG Interleaving! #########################
+	The script has become more flexible by introducing import parameters. They work
+	much and such the same as append, only they load the data to the start of the file
+	as opposed to slapping it on the end. This allows games like Saturday Night Slam-Masters
+	to have all it's program data properly read. Admittedly a bit slap dash but should get the job
+	done. Let me know if any bugs spring up
+	EXAMPLE:
+
+	#Import this data first before we interleave anything
+	prg_import = ["mbe_23e.8f",0x80000]
+	import_swapendian = 2 #Swap the endian. 2 Indicates a length of 16-bits, so every 2 bytes
+
+	######################### NEWLY SUPPORTED GAMES #########################
+	---Graphics Data ----
+	ringdest - Ring of Destruction/SlamMasters 2
+
+	---Program Data ----	
+	forgottn - Forgotten Worlds
+	
+	---Graphics and Program Data ----
+	aodk - Aggressors of Dark Kombat
+	punisher - The Punisher
+	slammast - Saturday Night SlamMasters
+
+--------03/10/2022: Rev 1.21--------
+	It seems i accidentally forgot to properly setup gowcaizr properly.
+	The resuource file has been fixed and should thus work now
+
+
 --------03/10/2022: Rev 1.2--------
 ######################### Program Data interleaving! #########################
 	The script has branched out from just Graphics! It can now be used
