@@ -94,6 +94,28 @@ else:
 
 #PRINT PRG STATUS
 try:
+    len(res_file.prg_import)
+except:
+    inter_prg_name = str(game_name).upper() + "_INTERLEAVED_PRG"
+else:
+    prg_ok = 1
+    print("IMPORT PRG: = OK")
+    #Validate ROMS
+    print("----Import Program ROMS----")
+    for i in range(0, len(res_file.prg_import), 2):
+        if os.path.exists(os.path.join(rompath, game_name, res_file.prg_import[i])):
+            print(res_file.prg_import[i], " - OK")
+        else:
+            print(res_file.prg_import[i], " - DOES NOT EXIST")
+    ####Print status of 
+    try:
+        res_file.import_swapendian
+    except:
+        print("Import Endian - Default")
+    else:
+        print("Import Endian - Swapped")
+
+try:
     res_file.prg_prefix
 except:
     inter_prg_name = str(game_name).upper() + "_INTERLEAVED_PRG"
@@ -191,6 +213,37 @@ def Interleave_PRG():
 #Go through every file based on it's group
     prg_table = []
     out_table = []
+ #Append remainder of data if need be
+    try:
+        res_file.prg_import
+    except:
+        print("No initial data to import")
+    else:
+        print("Now importing data...")
+        #Define the beginning of previous data to append the new data
+        import_data = {}
+        import_flipped_data = {}
+        for x in range(0, len(res_file.prg_import), 2):
+            import_data.update({x>>1 : []})
+            print("Import X - ", x)
+            print("Import Name - ", res_file.prg_import[x])
+            print("Import Size - ", res_file.prg_import[x+1])
+            with open((os.path.join(gamepath, res_file.prg_import[x])), "rb") as PRG1:
+                import_data[x>>1] = PRG1.read(res_file.prg_import[x+1])
+#####CHECK IF THE ENDIAN OF THE DATA SHOULD BE SWAPPED#####        
+                try:
+                    res_file.import_swapendian
+                except:
+                    print("writing appended data...")
+                    out_table += import_data[x>>1]
+                else: #Swap the Endian of the data before it's written
+                    import_flipped_data.update({x>>1 : []})
+                    for v in range(res_file.import_swapendian, (res_file.prg_import[x+1]) + res_file.import_swapendian, res_file.import_swapendian):
+                        for b in range(-1, -res_file.import_swapendian-1, -1):
+                            import_flipped_data[x>>1] += import_data[x>>1][v + b:  v + b + 1]
+                    print("writing flipped appended data...")
+                    out_table += import_flipped_data[x>>1]
+ 
     try:
         res_file.prg_prefix #Check if interleacving should be goin on
     except:
@@ -274,8 +327,6 @@ def Interleave_PRG():
                 except:
                     print("writing appended data...")
                     out_table += append_data[x>>1]
-#                    out_table += append_data[x>>1]
-#                    Output.write(bytes(append_data[x>>1]))
                 else: #Swap the Endian of the data before it's written
                     append_flipped_data.update({x>>1 : []})
                     for v in range(res_file.append_swapendian, (res_file.prg_append[x+1]) + res_file.append_swapendian, res_file.append_swapendian):
@@ -283,9 +334,6 @@ def Interleave_PRG():
                             append_flipped_data[x>>1] += append_data[x>>1][v + b:  v + b + 1]
                     print("writing flipped appended data...")
                     out_table += append_flipped_data[x>>1]
-                    
-#                    Output.write(bytes(append_flipped_data[x>>1]))
-#        print(len(append_flipped_data[x>>1]))
 
 ###WRITE THE FINAL INTERLEAVED DATA
     with open((os.path.join(gfxpath, inter_prg_name)), "wb") as Output:
@@ -293,6 +341,38 @@ def Interleave_PRG():
 
 
 def De_Interleave_PRG():
+####IMPORT DATA FOR LATER
+    h = 0
+    try:
+        res_file.prg_import
+    except:
+        pass
+    else:
+        import_prg_table = {}
+        with open((os.path.join(gfxpath, inter_prg_name)), "rb") as Input:
+#Offset when the data begins reading if there's interleaved data beforehand
+            for h in range(0, len(res_file.prg_import), 2):
+                import_prg_table.update({h>>1 : []})
+                import_prg_table[h>>1] += Input.read(res_file.prg_import[h+1])
+####CHECK TO SEE IF WE SHOULD CHANGE THE ENDIAN OF THE DATA
+        try:
+            res_file.import_swapendian
+        except:
+            for h in range(0, len(res_file.prg_append), 2):
+                with open((os.path.join(gamepath, res_file.prg_import[h])), "wb") as Appendfile:
+                    Appendfile.write(bytes(append_prg_table[h>>1]))
+        else: #Swap the Endian of the data before it's written
+            import_flipped_table = {}
+            for r in range(0, len(res_file.prg_import), 2):
+                import_flipped_table.update({r>>1 : []})
+                for q in range(res_file.import_swapendian, res_file.prg_import[r+1] + res_file.import_swapendian, res_file.import_swapendian):
+                    for k in range(-1, -res_file.import_swapendian-1, -1):
+                        import_flipped_table[r>>1] += import_prg_table[r>>1][q + k:  q + k + 1]
+#Write the flipped data back
+            for h in range(0, len(res_file.prg_import), 2):
+                with open((os.path.join(gamepath, res_file.prg_import[h])), "wb") as Appendfile:
+                    Appendfile.write(bytes(import_flipped_table[h>>1]))
+
 #Go through every file based on it's group
     prg_table = {}
 ####GRAB INTERLEAVED DATA FOR LATER
@@ -303,10 +383,22 @@ def De_Interleave_PRG():
         pass
     else:
         with open((os.path.join(gfxpath, inter_prg_name)), "rb") as Input:
-            while h < len(res_file.prg_groupsize):
-                prg_table.update({h : []})
-                prg_table[h] += Input.read((res_file.prg_romsize[h]) * (res_file.prg_groupsize[h]))
-                h += 1
+            try:
+                res_file.prg_import
+            except:
+                while h < len(res_file.prg_groupsize):
+                    prg_table.update({h : []})
+                    prg_table[h] += Input.read((res_file.prg_romsize[h]) * (res_file.prg_groupsize[h]))
+                    h += 1
+            else:
+                for q in range(0, len(res_file.prg_import),2):
+                    Input.read(res_file.prg_import[q+1])
+
+                while h < len(res_file.prg_groupsize):
+                    prg_table.update({h : []})
+                    prg_table[h] += Input.read((res_file.prg_romsize[h]) * (res_file.prg_groupsize[h]))
+                    h += 1
+
 
         out_table = {}
 
@@ -381,8 +473,17 @@ def De_Interleave_PRG():
 #Offset when the data begins reading if there's interleaved data beforehand
                 for s in range(0, len(res_file.prg_groupsize), 1):
                     Input.read((res_file.prg_romsize[s]) * (res_file.prg_groupsize[s]))
+            try:
+                res_file.prg_import
+            except:
+                for h in range(0, len(res_file.prg_append), 2):
+                    append_prg_table.update({h>>1 : []})
+                    append_prg_table[h>>1] += Input.read(res_file.prg_append[h+1])
+            else:
+#Offset when the data begins reading if there's interleaved data beforehand
+                for q in range(0, len(res_file.prg_import),2):
+                    Input.read(res_file.prg_import[q+1])
 
-#            while h < len(res_file.prg_append):
                 for h in range(0, len(res_file.prg_append), 2):
                     append_prg_table.update({h>>1 : []})
                     append_prg_table[h>>1] += Input.read(res_file.prg_append[h+1])

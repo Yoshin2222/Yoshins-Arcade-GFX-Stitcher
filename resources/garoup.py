@@ -16,5 +16,9 @@ rsize4 = 2 << 22 #8388608 bytes, or 8MB
 gfx_romsize = [rsize4,rsize4,rsize4,rsize4]
 
 #Slap the rest of the data on there for ease of use
+#prg_append =  ["proto_253-p1.p1", 0x100000]
+#append_swapendian = 2
+#prg_append =  ["proto_253-p2.p2", 0x400000]
+#append_swapendian = 2
 prg_append =  ["proto_253-p1.p1", 0x100000, "proto_253-p2.p2", 0x400000]
 append_swapendian = 2
