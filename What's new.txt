@@ -19,6 +19,7 @@
 	forgottn - Forgotten Worlds
 	
 	---Graphics and Program Data ----
+	3countb - 3 Count Bout/Fire Suplex
 	aodk - Aggressors of Dark Kombat
 	punisher - The Punisher
 	slammast - Saturday Night SlamMasters

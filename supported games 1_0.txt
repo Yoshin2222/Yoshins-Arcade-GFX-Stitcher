@@ -1,4 +1,5 @@
 			--------SUPPORTED GAMES AS OF 1.2---------------
+			3countb - 3 Count Bout/Fire Suplex (GFX+Program Data)
 			aodk - Aggressors of Dark Kombat (GFX+Program Data)
 			aof - Art of Fighting (GFX)
 			aof2 - Art of Fighting 2 (GFX)
