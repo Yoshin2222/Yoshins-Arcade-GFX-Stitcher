@@ -8,7 +8,6 @@ System = "CPS1"
 #that GFX are loaded
 gfx_prefix = ["dm-05.3a", "dm-07.3f", "dm-06.3c", "dm-08.3g", "09.4a", "18.7a", "13.4e", "22.7e", "11.4c", "20.7c", "15.4g", "24.7g", "10.4b", "19.7b", "14.4f", "23.7f", "12.4d", "21.7d", "16.4h", "25.7h"]
 
-
 #The CPS1 has more variance in the size of GFX ROMs. For example, SF2 loads a WORD
 #of data between a group of 4 apiece, whereas Ghosts 'n Ghouls loads a byte from a
 #group of 8. Group size accounts for this by explicitly declaring how many GFX ROMs
@@ -16,7 +15,18 @@ gfx_prefix = ["dm-05.3a", "dm-07.3f", "dm-06.3c", "dm-08.3g", "09.4a", "18.7a", 
 #each making use of 4 ROMs of data. The group_collec_size dictates how many bytes to
 #take from each group. In this case, each group takes 2 Bytes
 group_size = [4,8,8]
-group_collec_size = [2,1,1]
+#Each file has bytes read from it when referenced. This list keeps track of how much apiece
+rom_byte_size = [2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+#CPS1 Games are weird in that some GFX files can be bigger than the rest of the group, and
+#sort of spill over in to the next one at the same offset. This list lets us properly
+#reference these files in these "spillage" cases
+#for i in range(0,len(gfx_prefix),1):
+#    group_indexes = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]
+
+#Loop for when the game is being nice to you today!
+group_indexes = {}
+for i in range (0, len(gfx_prefix), 1):
+    group_indexes.update({i : i+1})
 
 #Total size of each ROM group
 rsize65 = 2 << 15 #65536 bytes, or 64KB
@@ -25,7 +35,15 @@ rsize1 = 2 << 19 #1048576 bytes, or 1MB
 rsize2 = 2 << 20 #2097152 bytes, or 2MB
 rsize3 = 2 << 21 #4194304 bytes, or 4MB
 rsize4 = 2 << 22 #8388608 bytes, or 8MB
-gfx_romsize = [rsize0,rsize65,rsize65]
+assemble_sizes = [rsize0,rsize65,rsize65]
+#Keeps track of the smallest ROM per group
+#assemble_sizes = [0x80000, 0x80000, 0x80000]
+#Gonna level with ya, extremely lazy solution to splitting up groups.
+#For instance, in SF2, the first 2 ROMs have 2 bytes apiece placed in to the EVEN Table
+#Then the next 2 have 2 bytes placed in the ODD table
+#Forgotten world uses the first 3 ROMs for the first table, then the next 4, and so on
+split_table = [0,0,1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1]
+
 
 #Define all the names of Program data here
 prg_prefix = ["dme_29.10h", "dme_30.10j", "dme_27.9h", "dme_28.9j"]

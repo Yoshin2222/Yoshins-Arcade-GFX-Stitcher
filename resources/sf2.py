@@ -15,7 +15,19 @@ gfx_prefix = ["sf2-5m.4a", "sf2-7m.6a", "sf2-1m.3a", "sf2-3m.5a", "sf2-6m.4c", "
 #each making use of 4 ROMs of data. The group_collec_size dictates how many bytes to
 #take from each group. In this case, each group takes 2 Bytes
 group_size = [4,4,4]
-group_collec_size = [2,2,2]
+#Each file has bytes read from it when referenced. This list keeps track of how much apiece
+rom_byte_size = [2,2,2,2,2,2,2,2,2,2,2,2]
+#CPS1 Games are weird in that some GFX files can be bigger than the rest of the group, and
+#sort of spill over in to the next one at the same offset. This list lets us properly
+#reference these files in these "spillage" cases
+group_indexes = [1,2,3,4,5,6,7,8,9,10,11,12]
+#Keeps track of the smallest ROM per group
+assemble_sizes = [0x80000, 0x80000, 0x80000]
+#Gonna level with ya, extremely lazy solution to splitting up groups.
+#For instance, in SF2, the first 2 ROMs have 2 bytes apiece placed in to the EVEN Table
+#Then the next 2 have 2 bytes placed in the ODD table
+#Forgotten world uses the first 3 ROMs for the first table, then the next 4, and so on
+split_table = [0,0,1,1,0,0,1,1,0,0,1,1]
 
 #Total size of each ROM group
 rsize0 = 2 << 18 #524288 bytes, or 512KB

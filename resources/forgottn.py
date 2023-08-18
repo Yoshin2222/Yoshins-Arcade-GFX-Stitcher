@@ -6,7 +6,31 @@ System = "CPS1"
 #The CPS1 is annoyingly specific with the ROM prefixes, so ya need to
 #define them each in order. Look in to MAMEs CPS1.C for info on the order
 #that GFX are loaded
-#gfx_prefix = ["ps-1m.3a","ps-3m.5a","ps-2m.4a","ps-4m.6a","ps-5m.7a","ps-7m.9a","ps-6m.8a","ps-8m.10a"]
+gfx_prefix = ["lw_2.2b","lw_1.2a","lw-08.9b","lw_18.5e","lw_17.5c","lw_30.8h","lw_29.8f","lw_4.3b","lw_3.3a","lw_20.7e","lw_19.7c","lw_32.9h","lw_31.9f","lw-02.6b","lw_14.10b","lw_13.10a","lw-06.9d","lw_26.10e","lw_25.10c","lw_16.11b","lw_15.11a","lw_28.11e","lw_27.11c",]
+#The CPS1 has more variance in the size of GFX ROMs. For example, SF2 loads a WORD
+#of data between a group of 4 apiece, whereas Ghosts 'n Ghouls loads a byte from a
+#group of 8. Group size accounts for this by explicitly declaring how many GFX ROMs
+#per group to load. In the case of SF2, [4, 4, 4] indicates that there are 3 groups, 
+#each making use of 4 ROMs of data. The group_collec_size dictates how many bytes to
+#take from each group. In this case, each group takes 2 Bytes
+group_size = [7,7,6,6]
+#Each file has bytes read from it when referenced. This list keeps track of how much apiece
+#rom_byte_size = [1,1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1]
+#rom_byte_size = [1,1,2,1,1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,2,1,1,1,1,1,1]
+rom_byte_size = [1,1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1]
+#CPS1 Games are weird in that some GFX files can be bigger than the rest of the group, and
+#sort of spill over in to the next one at the same offset. This list lets us properly
+#reference these files in these "spillage" cases
+#group_indexes = [1,2,3,4,5,6,7,8,9,3,10,11,12,13,14,15,16,17,18,13,19,20,16,21,22,23]
+group_indexes = [1,2,3,4,5,6,7,8,9,3,10,11,12,13,14,15,16,17,18,19,14,20,21,17,22,23]
+
+#Keeps track of the smallest ROM per group
+assemble_sizes = [0x20000, 0x20000, 0x20000,0x20000]
+#Gonna level with ya, extremely lazy solution to splitting up groups.
+#For instance, in SF2, the first 2 ROMs have 2 bytes apiece placed in to the EVEN Table
+#Then the next 2 have 2 bytes placed in the ODD table
+#Forgotten world uses the first 3 ROMs for the first table, then the next 4, and so on
+split_table = [0,0,0,1,1,1,1,0,0,0,1,1,1,1,0,0,0,1,1,1,0,0,0,1,1,1]
 
 #The CPS1 has more variance in the size of GFX ROMs. For example, SF2 loads a WORD
 #of data between a group of 4 apiece, whereas Ghosts 'n Ghouls loads a byte from a
