@@ -1,3 +1,32 @@
+--------xx/xx/xxxx: Rev 1.32--------
+	Reworked CPS1 loading. Still imperfect but closer to how the actual system
+	does it. Previous games should still be supported. Also added all the CPS3 games 
+	for interleaving/de-interleaving SIMM files
+	######################### NEWLY SUPPORTED GAMES #########################
+	---Graphics Data ----
+
+	---Program Data ----	
+	jojoban - Jojos Bizzare Adventure - Heritage for the Future (Program Data)
+	redearth - Red Earth  (Program Data)
+	sfiii - Street Fighter 3- New Generation  (Program Data)
+	sfiii2 - Street Fighter 3- Second Impact  (Program Data)
+	sfiii2n - Street Fighter 3-  Second Impact  (Program Data)
+	sfiii3 - Street Fighter 3-  Third Strike  (Program Data)
+	sfiii3n - Street Fighter 3-  Third Strike  (Program Data)
+	sfiii4n - Street Fighter 3-  Four-d Strike  (Program Data)
+	
+	---Graphics and Program Data ----
+
+--------xx/xx/xxxx: Rev 1.31--------
+	######################### NEWLY SUPPORTED GAMES #########################
+	---Graphics Data ----
+	megaman2 - Mega Man 2: The Power Fighters (GFX)
+
+	---Program Data ----	
+	
+	---Graphics and Program Data ----
+	fightfev - Fight Fever
+
 --------11/01/2023: Rev 1.3--------
 ######################### Improved PRG Interleaving! #########################
 	The script has become more flexible by introducing import parameters. They work
