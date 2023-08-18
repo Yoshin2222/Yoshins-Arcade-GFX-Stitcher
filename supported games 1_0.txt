@@ -1,41 +1,75 @@
-			--------SUPPORTED GAMES AS OF 1.0---------------
-			aof - Art of Fighting
-			aof2 - Art of Fighting 2
-			aof3 - Art of Fighting 3
-			armwar - Armoured Warriors
-			breakrev - Breakers Revenge
-			cybots - Cyberbots: Fullmetal Madness
-			ddsom - Dungeons & Dragons: Shadow Over Mystara
-			ddtod - Dungeons & Dragons: Tower of Doom
-			doubledr - Double Dragon (Neo-Geo)
-			dstlk - Darkstalkers: The Night Warriors
-			garoup - Garou: Mark of the Wolves (prototype)
-			gowcaizr - Voltage Fighter Gowcaizer
-			kizuna - Kizuna Encounter
-			kof94 - King of Fighters 94
-			kof95 - King of Fighters 95
-			kof96 - King of Fighters 96
-			kof97 - King of Fighters 97
-			kof98 - King of Fighters 98
-			lastbld2 - Last Blade 2
-			magdrop3 - Magical Drop 3
-			msh - Marvel SuperHeroes
-			mshvsf - Marvel Superheroes VS Street Fighter
-			mslug - Metal Slug
-			mvsc - Marvel VS Capcom: Clash of Superheroes
-			nwarr - Night Warriors: Darkstalkers Revenge
-			rbff2 - Real Bout: Fatal Fury 2
-			samsho2 - Samurai Shodown 2
-			samsho3 - Samurai Shodown 3
-			samsho4 - Samurai Shodown 4
-			sfa2 - Street Fighter Alpha 2
-			sfa3 - Street Fighter Alpha 3
-			sgemf - Super Gem Fighter
-			ssf2t - Super Street Fighter 2 Turbo
-			vsav - Vampire Saviour: The Lord of Vampire
-			wakuwak7 - Waku Waku 7
-			wh1 - World Heroes 1
-			xmcota - X-Men: Children of the Atom
-			xmvsf - X-Men VS Street Fighter
-
-
+			--------SUPPORTED GAMES AS OF 1.3---------------
+			3countb - 3 Count Bout/Fire Suplex (GFX+Program Data)
+			aodk - Aggressors of Dark Kombat (GFX+Program Data)
+			aof - Art of Fighting (GFX)
+			aof2 - Art of Fighting 2 (GFX)
+			aof3 - Art of Fighting 3 (GFX)
+			armwar - Armoured Warriors (GFX)
+			asurabus - Asura Buster (Program Data)
+			avengrgs - Avengers in Galactic Storm (Program Data)
+			avsp = Alien VS Predator (GFX)
+			breakrev - Breakers Revenge (GFX)
+			btlkroad - Battle K Road (Program Data)
+			cybots - Cyberbots: Fullmetal Madness (GFX)
+			dankuga - Dan-Ku-Ga (Program Data)
+			ddsom - Dungeons & Dragons: Shadow Over Mystara (GFX)
+			ddtod - Dungeons & Dragons: Tower of Doom (GFX)
+			dino - Caddilacs and Dinosaurs (GFX+Program Data)
+			dinorex - Dino Rex (Program Data)
+			doubledr - Double Dragon (Neo-Geo) (GFX)
+			dstlk - Darkstalkers: The Night Warriors (GFX)
+			fightfev - Fight Fever (GFX+Program Data)
+			ffight - Final Fight (GFX+Program Data)
+			forgottn - Forgotten Worlds (Program Data)
+			galaxyfg - Galaxy Fight: Universal Warriors (GFX)
+			garoup - Garou: Mark of the Wolves (prototype) (GFX+Program Data)
+			ghouls - Ghouls 'N Ghosts (GFX+Program Data)
+			gowcaizr - Voltage Fighter Gowcaizer (GFX)
+			jchan - Jackie Chan: The Kung Fu Master
+			jojoban - Jojos Bizzare Adventure - Heritage for the Future (Program Data)
+			kizuna - Kizuna Encounter (GFX)
+			knights - Knights of the Round (GFX+Program Data)
+			kof94 - King of Fighters 94 (GFX)
+			kof95 - King of Fighters 95 (GFX)
+			kof96 - King of Fighters 96 (GFX)
+			kof97 - King of Fighters 97 (GFX)
+			kof98 - King of Fighters 98 (GFX)
+			lastbld2 - Last Blade 2 (GFX)
+			magdrop3 - Magical Drop 3 (GFX)
+			megaman2 - Mega Man 2: The Power Fighters (GFX)
+			mmaulers - Monster Maulers (Program Data)
+			msh - Marvel SuperHeroes (GFX)
+			mshvsf - Marvel Superheroes VS Street Fighter (GFX)
+			mslug - Metal Slug (GFX)
+			mvsc - Marvel VS Capcom: Clash of Superheroes (GFX)
+			mwarr - Mighty Warriors (Program Data)
+			nwarr - Night Warriors: Darkstalkers Revenge (GFX)
+			punisher - The Punisher (GFX+Program Data)
+			rbff2 - Real Bout: Fatal Fury 2 (GFX)
+			redearth - Red Earth  (Program Data)
+			ringdest - Ring of Destruction/SlamMasters 2
+			samsho - Samurai Shodown/Samurai Spirits (GFX)
+			samsho2 - Samurai Shodown 2 (GFX)
+			samsho3 - Samurai Shodown 3 (GFX)
+			samsho4 - Samurai Shodown 4 (GFX)
+			sf - Street Fighter (Program Data)
+			sf2 - Street Fighter 2: The World Warrior (GFX+Program Data)
+			sfa - Street Fighter Alpha (GFX)
+			sfa2 - Street Fighter Alpha 2 (GFX)
+			sfa3 - Street Fighter Alpha 3 (GFX)
+			sgemf - Super Gem Fighter (GFX)
+			sfiii - Street Fighter 3- New Generation  (Program Data)
+			sfiii2 - Street Fighter 3- Second Impact  (Program Data)
+			sfiii2n - Street Fighter 3-  Second Impact  (Program Data)
+			sfiii3 - Street Fighter 3-  Third Strike  (Program Data)
+			sfiii3n - Street Fighter 3-  Third Strike  (Program Data)
+			slammast - Saturday Night SlamMasters
+			ssf2t - Super Street Fighter 2 Turbo (GFX)
+			strider - Strider (GFX+Program Data)
+			vhunt2 - Vampire Hunter 2 (GFX)
+			vsav - Vampire Saviour: The Lord of Vampire (GFX)
+			vsav2 - Vampire Saviour 2: The Lord of Vampire (GFX)
+			wakuwak7 - Waku Waku 7 (GFX)
+			wh1 - World Heroes 1 (GFX)
+			xmcota - X-Men: Children of the Atom (GFX)
+			xmvsf - X-Men VS Street Fighter (GFX)
