@@ -3,6 +3,8 @@ from distutils.command.build_scripts import first_line_re
 import os
 import importlib
 import sys
+import time
+import math 
 
 #DANGEROUTS TO MUCK WITH STUFF UNDER THIS LINE, BE WARNED
 var_prefix = "GFX_C"
@@ -566,7 +568,6 @@ def CASE_NEO_GEO():
 
 #Holds the EVEN and ODD Bytes in as many tables as there are GFX Roms
 def grab_ROM_Data(i):
-    read_size = 2
     for k in range (0, res_file.gfx_romsize[i>>2] >> 2,1):
 #Within each of those chunks, words from two of the associated base 
 #ROMs are interleaved for each 8x8 subtile (64 bytes). The ROMs read 
@@ -579,17 +580,17 @@ def grab_ROM_Data(i):
 #switch back to alternating words from ROMs 13 and 15... etc.
 
         #Table 0 stores the EVEN Bytes for 13/15m
-        tempfile[i] += gfx_file[i].read(read_size) #13m #14m
-        tempfile[i] += gfx_file[i+1].read(read_size) #15m #16m
+        tempfile[i] += gfx_file[i].read(2) #13m #14m
+        tempfile[i] += gfx_file[i+1].read(2) #15m #16m
         #Table 1 stores the ODD Bytes for 13/15m
-        tempfile[i+1] += gfx_file[i].read(read_size) #17m #18m
-        tempfile[i+1] += gfx_file[i+1].read(read_size) #19m #20m
+        tempfile[i+1] += gfx_file[i].read(2) #17m #18m
+        tempfile[i+1] += gfx_file[i+1].read(2) #19m #20m
         #Table 2 stores the EVEN Bytes for 17/19m
-        tempfile[i+2] += gfx_file[i+2].read(read_size) #13m #14m
-        tempfile[i+2] += gfx_file[i+3].read(read_size) #15m #16m
+        tempfile[i+2] += gfx_file[i+2].read(2) #13m #14m
+        tempfile[i+2] += gfx_file[i+3].read(2) #15m #16m
         #Table 3 stores the ODD Bytes for 17/19m
-        tempfile[i+3] += gfx_file[i+2].read(read_size) #17m #18m
-        tempfile[i+3] += gfx_file[i+3].read(read_size) #19m #20m
+        tempfile[i+3] += gfx_file[i+2].read(2) #17m #18m
+        tempfile[i+3] += gfx_file[i+3].read(2) #19m #20m
 #        print("interleave", k)
 #    for j in range (0, res_file.gfx_romsize[i>>2], 64):
 #    ["-------------- table 0 --------------"]
@@ -603,26 +604,29 @@ def grab_ROM_Data(i):
 
 
     j = 0
-    #4  - 8x8   tiles
-    #64 - 16x16 tiles
-    #4096 - 32x32 tiles?
-    grabbing_size = 64  #64
-    while j < (res_file.gfx_romsize[i>>2]) << 2:
+    l = 64
+    mode = 0
+    if mode == 0:
+        order = [0,0,1,1]
+    else:
+        order = [0,1,0,1]
+    #ssf2t
+        
+    while j < (res_file.gfx_romsize[i>>2]) << 1:
 #Interleave every 64 Bytes between groups
         #The first table stores the EVEN WORDs of the 
         #group
         #Grab 64 bytes from the 13/15 EVEN WORDs table
-        tempfile2[i >> 1] += tempfile[i][j:j+grabbing_size]
+        tempfile2[(i >> 1) + order[0]] += tempfile[i][j:j+l]
         #Grab 64 bytes from the 17/19 EVEN WORDs table
-        tempfile2[i >> 1] += tempfile[i+2][j:j+grabbing_size]
+        tempfile2[(i >> 1) + order[1]] += tempfile[i+2][j:j+l]
         #The second table stores the ODD WORDs of the 
         #group
         #Grab 64 bytes from the 13/15 ODD WORDs table
-        tempfile2[(i >> 1) + 1] += tempfile[i+1][j:j+grabbing_size]
+        tempfile2[(i >> 1) + order[2]] += tempfile[i+1][j:j+l]
         #Grab 64 bytes from the 17/19 ODD WORDs table
-        tempfile2[(i >> 1) + 1] += tempfile[i+3][j:j+grabbing_size]
-        j += grabbing_size
-
+        tempfile2[(i >> 1) + order[3]] += tempfile[i+3][j:j+l]
+        j += l
 #    ["-------------- table2 - 0 --------------"]
     print(filename[i],filename[i+1],filename[i+2],filename[i+3],"EVEN")
 #    ["-------------- table2 - 1--------------"]
@@ -637,8 +641,147 @@ def grab_ROM_Data(i):
         tempfile3[i>>2] += tempfile2[(i>>1) + 1][j:j+(2 << 19)]
         j += 2 << 19 #Add offset to grab the right data
 
+############ #32x32 TILE TEST ##################
+#        My guess is essentially instead of the tiles being organised like
+#        1234
+#        5678
+#        It's more like
+#        1256
+#        3478
+    TEST = 1
+
+    if TEST != 0:
+        # The output should resemble MAMEs default display, where each 32x32 tile
+        # is composed of 16x16 tiles in this ROM order
+        #  - 12
+        #  - 34
+        # 16 32x32 tiles across.
+
+        # Normally when assembled, data is simply read from left to right, top to bottom.
+        # But in order to get 32x32 tiles to display correctly, we need to understand a few things
+        # In TM, Tiles are displayed in 8x8 chunks, and since we're messing with the CPS2, GFX 
+        # are stored as 4bits per pixel. 8 Pixels across, that's 4 Bytes per line. 8 lines down, 
+        # 4*8 gives us 32, 0x20 bytes in total per tile. In 1D mode, data is simply read from left to right, 
+        # what is displayed being built up 1 8x8 tile at a time. This is how you can change the canvas size 
+        # and tiles to the upper left will stay still. In the ROM, this is reflected as a linear string of 
+        # 0x20 bytes. This is important to note as it seems 32x32 tiles are stored in a slightly different format,
+        # more reflective of 2D Mode. Instead of defaulting to 1 8x8 chunk, 2D Mode allows you to manually
+        # assert how big chunks are. For our purposes, 16x16, or 2 chunks. It's at this point things get funky.
+        # Now instead of Bytes being linear, they adhere to the dimensions of the chunks we've defined.
+        # A string of 0xFF bytes 0x20 long would normally show a solid tile, but in this 2D mode, it instead
+        # displays 2 tiles seemingly cut in half. You can visually see this in a Hex Editor such as HxD. It's
+        # important to note that chunks only ever increase in size horizontally,  
+        # 1
+        # 2
+        # 3
+        # 4
+        # And this after the process
+        # 1 3
+        # 2 4
+        # For reference, this is how TM uses data in 2D Mode
+        # The first 4 bytes are responsible for the first line of the tile. Since we're messing with the
+        # CPS2, it's GFX are 4bpp, or 4 Bits Per-pixel. These Bits are split across the 4 Bytes, and are
+        # essentially stitched together when the data is read. For instance, a value of 0x80808080
+        # would equate to 10000000100000001000000010000000
+        #10000000
+        #10000000
+        #10000000
+        #10000000
+        # By stitching the upper Bits together, we get 1111, the value 15, so we use that color for this
+        # pixel.
+        # The process is repeated for the rest of the bits to get the rest of the line. Once this is done,
+        # we skip forward to 
+        # By default, when viewing tiles in TM in 2D Mode-2 column rows, the first tile is 0x0 to 0x04
+        # across, 0x0 to 0x40 down, totalling 16 bytes. The tile 
+
+        width = 16
+        tile_data = {}
+        buffer = {}
+        for b in range (0,4,1):
+            tile_data.update({b : []})
+        for b in range (0,4,1):
+            buffer.update({b : []})
+        test2 = 1
+        #Read through the whole file, grabbing the needed Bytes in 4x8 strips
+        if test2 == 0:
+            for offset in range(0, len(tempfile3[i>>2]),0x40):
+                for tile in range(0,4,1):
+                    # Read 4 Y Strips of Bytes
+                    for y in range(0,4,1):
+                    # 4 Bytes across
+                        # TILE = 0
+                        # (0) + offset + x + (32
+                        for x in range(0,4,1):
+                            adr = (tile<<2) + offset + x + (y<<4)
+                            tile_data[tile] += tempfile3[(i>>2)][adr:adr+1]
+            #interleave the tiles 4 Bytes apiece to convert it to 1D data
+            for offset in range(0, len(tempfile3[i>>2]),0x40):
+                for dat in range(0,2,1):
+                    for y in range(0,8,1):
+                    # 4 Bytes across
+                        # TILE = 0
+                        # (0) + offset + x + (32
+                        for x in range(0,2,1):
+                            adr = (dat<<2) + offset + (x<<2) + (y<<4)
+                            buffer[(dat<<1)+0] += tile_data[(i>>2)][adr:adr+4]            
+                            buffer[(dat<<1)+1] += tile_data[(i>>2)][adr:adr+4]            
+
+    #        for offset in range(0, len(tempfile3[i>>2]),0x40):
+    #            for index in range(0,4,1):
+    #                gfx_table[0] += tile_data[tile]#[offset:offset+1]
+            add = 0x20
+            add2 = add<<1
+            for index in range(0,4,1):
+                for offset in range(0, len(tempfile3[i>>2]),add2):
+                    gfx_table[0] += tile_data[index][offset:offset+add]
+    #                gfx_table[0] += tile_data[(index<<1)+1][offset:offset+add]
+        else:
+            add2 = 0x40
+        #Take every 8x8 tile and reogrganize them
+            for offset in range(0, len(tempfile3[i>>2]), add2<<1):
+            #Create 2 tables, 1 for every EVEN and ODD pars of the 16x16 tiles
+                start2 = offset + add2
+                tile_data[0] += tempfile3[i>>2][offset:offset+add2]
+                tile_data[1] += tempfile3[i>>2][start2:start2+add2]
+            #Add the tables together
+#            add = 0x80
+#            for b in range(0, len(tempfile3[i>>2]), add):
+#                for c in range(0,2,1):
+#                    gfx_table[0] += tile_data[c][b:b+add]
+            #test thing
+#            tempfile3[i>>2] = convert_GFX_2Dto1D(tempfile3[i>>2], 4, 16, 16, len(tempfile3[i>>2]))
+#            gfx_table[0] += convert_GFX_2Dto1D(tempfile3[i>>2], 4, 8, 8, len(tempfile3[i>>2]))
+            gfx_table[0] += tempfile3[i>>2]
+            #Interleave tiles
+#            add3 = 0x80
+#            for offset in range(0, len(tempfile3[i>>2]), add3<<1):
+#                start2 = offset + add3
+#                gfx_table[0] += tempfile3[i>>2][offset:offset+add3]
+#                gfx_table[0] += tempfile3[i>>2][start2:start2+add3]
+
+
+           # gfx_table[0] += tempfile3[i>>2]
+    else:
 #Append the groups final data to the output
-    gfx_table[0] += tempfile3[i>>2]
+        gfx_table[0] += tempfile3[i>>2]
+
+
+def convert_GFX_2Dto1D(table, bpp, blockwidth, blockheight, length):
+    tempbuf = []
+    #READ A BLOCK OF DATA AS IF IT WERE 2D TILES
+    x_read = math.floor((blockwidth/bpp))<<1
+    buf_x = x_read<<2
+    y_read = blockheight*0x10
+
+    #Get the Location in ROM to read/Define Chunk
+    for y_ptr in range(0, length, y_read):
+        for x_ptr in range(0, buf_x, x_read):
+        #Read the Data at this chunk
+            for y in range(0, y_read, math.floor(y_read/blockheight)):
+                adr = x_ptr + y_ptr + y
+                tempbuf += table[adr:adr+x_read]
+    return tempbuf
+
 
 def cps2_de_interleave1(inp, loopindex):
     #Properly retrieve each "Group" of Even and Odd Bytes
@@ -679,7 +822,6 @@ def cps2_de_interleave1(inp, loopindex):
         tempfile[loopindex+3] += tempfile2[(loopindex >> 1) + 1][j+64:j+128]
         j += 128
 
-    Split_size = 2
     j = 0
     while j < res_file.gfx_romsize[loopindex>>2]:
         #At the beginning of interleaving, we stitched
@@ -781,283 +923,237 @@ def write_m_files():
                             #print("De-Interleaving", filename[i], filename[i+1],filename[i+2],filename[i+3])
 
 #//////////////////// END OF CASE CPS2 ////////////////////
+### The process for the CPS1 is much and such the same as CPS2, only that due to the varied GFX sizes,
+# we don't interleave every 2 << 19 chunk of data. Data is read from each Group, and any remaining data in essence
+#"spills" over in to the next one
+                        #CPS1 GFX INTERLEAVING STEPS
+#    = Copy the files
+#    = Go through every Group, making EVEN and ODD tables composed of 4 bytes per half of the group. For instance,
+#   SF2 has ROM Groups of 4, each reading 2 bytes apiece. The first table would contain a WORD from each of the 
+#   first 2 ROMs, then the next table would have the next 4 bytes.
+#    = Interleave these EVEN and ODD tables together a tile apiece, 64 Bytes
+#    = Finally, Append that interleaved group data to the output
 
+def generate_split_table():
+    split_tab = []
+    index = 0
+    for i in range(0, len(res_file.group_size), 1):
+        temp = 0
+        temp2 = 0
+        for k in range (0, res_file.group_size[i], 1):
+            add = res_file.rom_byte_size[res_file.group_indexes[index+k]-1]
+            if temp2 >= 4:
+                temp = 1
+            else:
+                 temp = 0
+            split_tab.append(temp)
+            temp2 += add
+        index += res_file.group_size[i]
+    print(split_tab)
+    return split_tab
 
-def grab_CPS1_ROM_Data(i, k):
-#The CPS1 is slightly simpler than the CPS2 in the sense that
-#each pair of ROMs is interleaved on a WORD Basis, with the final
-#data storing a 16x16 tile from the first 2 ROMs, then the next 2,
-#back to the first and so on until all the data of the 4 ROMs is read
-#The CPS1 is weird in that groups can vary in size, whereas the CPS2
-#Is consistently 4. To accomodate this, 2 seperate loops are used, one
-#for if the group is 4, and the other 8
+def generate_assemble_sizes():
+    temp = 0
+    output = []
+    comp_table = []
+    #First, make a copy of every GFX ROM
+    for group in range(0, len(res_file.group_size), 1):
+        output.append(0)
+        k = 0
+    #Gather temp Assemble sizes before comparison
+        for index in range(0, res_file.group_size[group], 1):
+            group_index = res_file.group_indexes[index+k]-1
+            FILE_LOC = os.path.join(gamepath, filename[group_index])
+            bytesize = res_file.rom_byte_size[group_index]
+            assemble_size = math.floor(os.path.getsize(FILE_LOC)/bytesize)
+            comp_table.append(assemble_size)
+        k +=  res_file.group_size[group]
 
-#For groups of 4, the CPS1 loads the first tile as 32 alternating WORDs of data from the first
-#2 GFX ROMs, then 32 WORDs from the next pair, back to the first, and so on until
-#all the tiles are loaded
-    if res_file.group_size[k] == 4:
-        for l in range (0, res_file.gfx_romsize[k] >> 1,1):
-            tempfile[(i)+0] += gfx_file[i].read(res_file.group_collec_size[k])
-            tempfile[(i)+0] += gfx_file[i+1].read(res_file.group_collec_size[k])
-            tempfile[(i)+1] += gfx_file[i+2].read(res_file.group_collec_size[k])
-            tempfile[(i)+1] += gfx_file[i+3].read(res_file.group_collec_size[k])
+    #Compare each Assemble size for each group, specifically choosing the smallest number
+    temp = comp_table[0]
+    k = 0
+    for group in range(0, len(res_file.group_size), 1):
+        for index2 in range(0, res_file.group_size[group], 1):
+            if comp_table[index2+k] < temp:
+                temp = comp_table[index2]
+        output[group] = temp
+        k +=  res_file.group_size[group]
+        print("ASSEMBLE_SZZE - ", hex(output[group])) #," - ", hex(bytesize))
+    return output
 
-#When loading groups of 8, the first tile is comprised of Bytes from the first 4
-#GFX ROMs in the group, then the next tile uses bytes from the next 4, then the first
-#and so on. Fringe cases like Forgotten Worlds handles this a bit differently but this
-#is true for most CPS1 titles to my knowledge
+def grab_CPS1_ROM_Data():
+    print("Interleaving GFX...")
+    time.sleep(1)
+    finalsize = 0
+    #First, make a copy of every GFX ROM
+    for i in range(0, len(res_file.gfx_prefix), 1):
+        FILE_LOC = os.path.join(gamepath, filename[i])
+        file_length = os.path.getsize(FILE_LOC)
+        with open (FILE_LOC, "rb") as inp:
+            bytesize = res_file.rom_byte_size[i]
+            print(FILE_LOC, " - SIZE = ", hex(file_length), " - ", hex(bytesize))
+            gfx_file[i] = inp.read(file_length)
+            finalsize += file_length
+    print("\tTOTAL SIZE OF GFX ROMS - ", hex(finalsize))
 
-    if res_file.group_size[k] == 8:
-        for l in range (0, res_file.gfx_romsize[k],1):
-#        while l < ((res_file.gfx_romsize[k]) * (res_file.group_size[k])):
-#        l = 0
-#        while l < res_file.gfx_romsize[k] << 2:
-#        for l in range (0, res_file.gfx_romsize[k],1):
-            tempfile[(i)+0] += gfx_file[i].read(res_file.group_collec_size[k])
-            tempfile[(i)+0] += gfx_file[i+1].read(res_file.group_collec_size[k])
-            tempfile[(i)+0] += gfx_file[i+2].read(res_file.group_collec_size[k])
-            tempfile[(i)+0] += gfx_file[i+3].read(res_file.group_collec_size[k])
-            tempfile[(i)+1] += gfx_file[i+4].read(res_file.group_collec_size[k])
-            tempfile[(i)+1] += gfx_file[i+5].read(res_file.group_collec_size[k])
-            tempfile[(i)+1] += gfx_file[i+6].read(res_file.group_collec_size[k])
-            tempfile[(i)+1] += gfx_file[i+7].read(res_file.group_collec_size[k])
+def CPS1_Interleave_GFX_data():
+    a = 0 #Keeps track of which Group Indexes to mess with
+    increment = 0
+    split_table = generate_split_table()
+    assemble_sizes = generate_assemble_sizes()
+    #For how many groups there are, grab Bytes from each file
+    #and appropriately split them in to EVEN and ODD parts
+    for group in range(0, len(res_file.group_size),1):
+        print(group, " - assemble size  - ", hex(assemble_sizes[group]))
+        for k in range(0, assemble_sizes[group], 1):
+#        print(group, " - assemble size  - ", hex(res_file.assemble_sizes[group]))
+#        for k in range(0, res_file.assemble_sizes[group], 1):
+            for b in range(0, res_file.group_size[group],1):
+                file_index = res_file.group_indexes[a+b]-1
+                increment = res_file.rom_byte_size[file_index]
+#                split = res_file.split_table[a+b]
+                split = split_table[a+b]
+                val = temp_counter[file_index]
+                tempfile[(group<<1)+split] += gfx_file[file_index][val:val+increment]
+                temp_counter[file_index] += increment
 
+    #Add to a when done reading this group data
+        a += res_file.group_size[group]
 
-#    ["-------------- table 0 --------------"]
-    print(filename[i],filename[i+1],"EVEN")
-#    ["-------------- table 1 --------------"]
-    print(filename[i],filename[i+1],"ODD")
-#    ["-------------- table 2 --------------"]
-    print(filename[i+2],filename[i+3],"EVEN")
-#    ["-------------- table 3 --------------"]
-    print(filename[i+2],filename[i+3],"ODD")
-
-    j = 0
-#Accomodate varying group sizes
-#    print("grab k -", k)
-    print(res_file.group_size[k])
-    print(((res_file.gfx_romsize[k]) * (res_file.group_size[k])))
-    while j < ((res_file.gfx_romsize[k]) * (res_file.group_size[k])):
-        gfx_table[0] += tempfile[(i) + 0][j:j+64]
-        gfx_table[0] += tempfile[(i) + 1][j:j+64]
-        j += 64
-
-
-def cps1_de_interleave1(k, i):
-    j = 0
-#DE-INTERLEAVE A GROUP OF 4
-    if res_file.group_size[k] == 4:
-        print("De-Interleaving", filename[i], filename[i+1],filename[i+2],filename[i+3])
-        while j < (res_file.gfx_romsize[k]) << 2:
-    #Grab every 64 Byte chunk from the combined data
-            tempfile2[(i>>1) + 0] += tempfile3[(k)][j:j+64]
-            tempfile2[(i>>1) + 1] += tempfile3[(k)][j+64:j+128]
-            j += 128
-
-        for l in range (0, res_file.gfx_romsize[k] << 1,4):
-            gfx_table[i + 0] += tempfile2[(i>>1) + 0][l:l+2]
-            gfx_table[i + 1] += tempfile2[(i>>1) + 0][l+2:l+4]
-            gfx_table[i + 2] += tempfile2[(i>>1) + 1][l:l+2]
-            gfx_table[i + 3] += tempfile2[(i>>1) + 1][l+2:l+4]
-
-#DE-INTERLEAVE A GROUP OF 8
-    if res_file.group_size[k] == 8:
-        print("De-Interleaving", filename[i], filename[i+1],filename[i+2],filename[i+3], filename[i+4], filename[i+5],filename[i+6],filename[i+7])
-#        while j < (res_file.gfx_romsize[k]) << 2:
-        while j < (res_file.gfx_romsize[k]) << 3:
-    #Grab every 64 Byte chunk from the combined data
-            tempfile2[(i>>1) + 0] += tempfile3[(k)][j:j+64]
-            tempfile2[(i>>1) + 1] += tempfile3[(k)][j+64:j+128]
-            j += 128
-
-        l = 0
-        while l < res_file.gfx_romsize[k] << 2:
-#        for l in range (0, res_file.gfx_romsize[k] << 2,4):
-            gfx_table[i + 0] += tempfile2[(i>>1) + 0][l:l+1]
-            gfx_table[i + 1] += tempfile2[(i>>1) + 0][l+1:l+2]
-            gfx_table[i + 2] += tempfile2[(i>>1) + 0][l+2:l+3]
-            gfx_table[i + 3] += tempfile2[(i>>1) + 0][l+3:l+4]
-            gfx_table[i + 4] += tempfile2[(i>>1) + 1][l:l+1]
-            gfx_table[i + 5] += tempfile2[(i>>1) + 1][l+1:l+2]
-            gfx_table[i + 6] += tempfile2[(i>>1) + 1][l+2:l+3]
-            gfx_table[i + 7] += tempfile2[(i>>1) + 1][l+3:l+4]
-            l += 4
-
-def newcase():
-    #Assemble each group of data
-    assembled_data = {}
-    for i in range (0, num_of_gfx_roms>>1, 1):
-        assembled_data.update({i : []})
-    mixed_data = {}
-    for i in range (0, 1, 1):
-        mixed_data.update({i : []})
-    track = {}
-    for i in range (0, num_of_gfx_roms, 1):
-        track.update({i : 0})
-
-#B is used to increment through group sizes. Using Group Sizes,
-#we grab the even and odd bytes of each group, and store them in to
-#the assembled_data tables
-#J is used to rotate through the current group. Take the current example
-#   group_size = [4,4,4]
-#   group_indexes = [1,2,3,4,5,6,7,8,9,10,11,12]
-#   rom_byte_size = [2,2,2,2,2,2,2,2,2,2,2,2]
-#   assemble_sizes = [0x80000, 0x80000, 0x80000]
-#If B = 1, we can skip the first group, which would be the first 4 ROMs
-#So we load group_size[b], which now is 4. Using Group_indexes, we can
-#then know what ROMs are part of this group. Games like Forgotten Worlds
-#are awkward and have bytes spill over in to the next group. In this case, 
-#we use roms 5,6,7 and 8, and grab as many bytes as the correlating byte_size, 
-#in this case, each ROM grabs 2 bytes. We use Assemble_sizes to know at what 
-#point to stop assembling the group.
-#
-#            tempfile[(i)+0] += gfx_file[i].read(res_file.group_collec_size[k])
-#            tempfile[(i)+0] += gfx_file[i+1].read(res_file.group_collec_size[k])
-#            tempfile[(i)+0] += gfx_file[i+2].read(res_file.group_collec_size[k])
-#            tempfile[(i)+0] += gfx_file[i+3].read(res_file.group_collec_size[k])
-#            tempfile[(i)+1] += gfx_file[i+4].read(res_file.group_collec_size[k])
-#            tempfile[(i)+1] += gfx_file[i+5].read(res_file.group_collec_size[k])
-#            tempfile[(i)+1] += gfx_file[i+6].read(res_file.group_collec_size[k])
-#            tempfile[(i)+1] += gfx_file[i+7].read(res_file.group_collec_size[k])
-#    while j < ((res_file.gfx_romsize[k]) * (res_file.group_size[k])):
-#        gfx_table[0] += tempfile[(i) + 0][j:j+64]
-#        gfx_table[0] += tempfile[(i) + 1][j:j+64]
-#        j += 64
-    group = 0
-    index = 0 #Keep track of which ROM we're messing with in conjunction with group_indexes and split_table
-    number = 0 #Lines up with indexes in the byte_size,split_table and group_indexes
-    while group < (len(res_file.group_size)):
-        for i in range(0,res_file.assemble_sizes[group], res_file.rom_byte_size[index]):
-            for j in range(0,res_file.group_size[group], 1):
-                val = number+j
-                split = res_file.split_table[val]
-                index = (res_file.group_indexes[val] - 1)
-                g1 = (track[index])+i
-                g2 = (track[index])+i+res_file.rom_byte_size[index]
-
-                #Split bytes in to EVEN and ODD tables
-#                assembled_data[(group<<1)+split] += gfx_copy[index][(track[index])+i : (track[index])+i+res_file.rom_byte_size[index]]
-                assembled_data[(group<<1)+split] += gfx_copy[index][g1:g2]
-
-        print("ROMBYTESIZE - ", len(res_file.rom_byte_size))
-        print("split_table - ", len(res_file.split_table))
-        print("assemble_sizes - ", len(res_file.assemble_sizes))
-        print("number- - ", number)
-
-#Add to Track to ensure we read from the correct point in each ROM
-        for j in range(0,res_file.group_size[group], 1):
-            print("j - ", number+j)
-            index = (res_file.group_indexes[number+j] - 1)
-            add =  res_file.assemble_sizes[group]#*res_file.rom_byte_size[index]
-#            print("write to track - ", index, " || - ", track[j], " || - ", hex(track[j]), " || + ",res_file.assemble_sizes[group]," x ", res_file.rom_byte_size[index], " = ", add, " || - ", hex(add))
-            track[index] = track[index] + add
-#            print("write to track - ", index, " || - ", track[j], " || - ", hex(track[j]))
-            print("size - ", res_file.assemble_sizes[group]*res_file.rom_byte_size[j], " - ", hex(res_file.assemble_sizes[group]*res_file.rom_byte_size[j]))
-        print("j = ", j, " || Number = ", number, " || Index = ", index, " || Split = ", split)
-#Print Assembled table data
-        for u in range(0, num_of_gfx_roms,1):
-            print("Track ", u, "len = ", track[u], " - ", hex(track[u]))
-#        print("Group - ", group, " || Index - ", index)
-#        print("Index - ", index)
-        number += res_file.group_size[group]
-        group += 1
-#    print("j now - ", j)
-
-#Print Assembled table data
-    for u in range(0, len(assembled_data),1):
-        print("assembled ", u, "len = ", len(assembled_data[u]), " - ", hex(len(assembled_data[u])))
-
-#Loop to assemble the final GFX file
-#From the previous loop, grab 64 bytes from each "group", so the first 64 bytes
-#are from the first half of the group, then the second, and so on
-#Earlier we assembled 2 tables per group, each containing the first 4 bytes of
-#the GFX Group, so the first 4 bytes are from ROM 1/2, and
-
-    j = 0
-    group = 0
-
-#    for k in range(0, (num_of_gfx_roms)>>1, 1):        
-    while group < len(res_file.group_size):
-        for k in range(0, num_of_gfx_roms>>1, 2):
-#        while j < ((res_file.assemble_sizes[group])*((res_file.group_size[group]))):
-            while j < len(assembled_data[group]):
-    #            for n in range(0,(len(res_file.group_size)),1):
-    #             for n in range(0,2,1):
-                val = (group<<1)
-    #            split = res_file.split_table[val]
-    #                index = (res_file.group_indexes[val] - 1)
-    #                res_file.rom_byte_size[k]
-                gfx_table[0] += assembled_data[val+0][j:j+64]
-                gfx_table[0] += assembled_data[val+1][j:j+64]
-    #            gfx_table[0] += tempfile[0][j:j+64]
-    #            gfx_table[0] += tempfile[1][j:j+64]
-                j += 64
-
-        print("GROUP = ", group)
-        print("VALUE = ", val)
+    #Once the Groups are properly split in to EVEN and ODD tables, Interleave
+    #them one Tile at a time
+    for i in range(0, len(res_file.group_size),1):
         j = 0
-        group += 1
+        while j < len(tempfile[i])<<1:
+            tempfile2[i] += tempfile[(i<<1)][j:j+64]
+            tempfile2[i] += tempfile[(i<<1)+1][j:j+64]
+            j += 64
 
-    print("j = ", j)
-    print("gfx len = ", len(gfx_table[0]), " - ", hex(len(gfx_table[0])))
-    with open("out", "wb") as out:
-        out.write(bytes(gfx_table[0]))
+    with open (os.path.join(gfxpath, inter_name), "wb") as Interleaved_GFX: 
+        print("----------------TABLE3----------------")
+        for i in range (0,len(tempfile3),1):
+            print(len(tempfile3[i]), " - ", hex(len(tempfile3[i])))
+        print("----------------TABLE2----------------")
+        for i in range (0,len(tempfile2),1):
+            print(len(tempfile2[i]), " - ", hex(len(tempfile2[i])))
+            gfx_table[0] += tempfile2[i]
+        print("----------------TABLE1----------------")
+        for i in range (0,len(tempfile),1):
+            print(len(tempfile[i]), " - ", hex(len(tempfile[i])))
+        print("----------------EVEN----------------")
+        for i in range (0,len(even_tables),1):
+            print(len(even_tables[i]), " - ", hex(len(even_tables[i])))
+        print("----------------ODD----------------")
+        for i in range (0,len(odd_tables),1):
+            print(len(odd_tables[i]), " - ", hex(len(odd_tables[i])))
+        print("----------------OUTPUT----------------")
+        for i in range (0,len(gfx_table),1):
+            print(len(gfx_table[i]), " - ", hex(len(gfx_table[i])))
+        Interleaved_GFX.write(bytes(gfx_table[0]))
 
+def cps1_de_interleave1():
+    print("De-interleaving GFX...")
+    #Grab the Interleaved Data
+    int_gfx_name = os.path.join(gfxpath, inter_name)
+    int_gfx_size = os.path.getsize(int_gfx_name)
+    with open(int_gfx_name, "rb") as inp: 
+        gfx_file[0] = inp.read(int_gfx_size)
+
+
+    #Split the data back in to its individual ROM groups
+    assemble_sizes = generate_assemble_sizes()
+    offset = 0
+    f_read = 0 #This is a caveman way of doing it but fuck it i'm tired lol
+    for i in range(0, len(res_file.group_size),1):
+        byte_read = assemble_sizes[i] << 3
+        tempfile3[i] += gfx_file[0][offset:offset+byte_read]
+        offset += byte_read
+        f_read += 1
+
+    #Split the ROM in to its EVEN and ODD groups again, tile by tile
+    for i in range(0, len(res_file.group_size),1):
+        j = 0
+        while j < len(tempfile3[i]):
+            tempfile2[(i<<1)]   += tempfile3[i][j:j+64]
+            tempfile2[(i<<1)+1] += tempfile3[i][j+64:j+128]
+            j += 128
+
+    a = 0 #Keeps track of which Group Indexes to mess with
+    increment = 0
+    split_table = generate_split_table()
+    #For how many groups there are, grab Bytes from each file
+    #and appropriately split them in to EVEN and ODD parts
+    for group in range(0, len(res_file.group_size),1):
+        k = 0
+#        print(group, " - assemble size  - ", hex(res_file.assemble_sizes[group]))
+        print(group, " - assemble size  - ", hex(assemble_sizes[group]))
+        while k < len(tempfile2[group<<1])<<1:
+            for b in range(0, res_file.group_size[group],1):
+                file_index = res_file.group_indexes[a+b]-1
+                increment = res_file.rom_byte_size[file_index]
+#                split = res_file.split_table[a+b]
+                split = split_table[a+b]
+                val = temp_counter[(group<<1)+split]
+
+                tempfile[file_index] += tempfile2[(group<<1)+split][val:val+increment]
+                temp_counter[(group<<1)+split] += increment
+                k += 1
+
+    #Add to a when done reading this group data
+        a += res_file.group_size[group]
+
+    print("----------------TABLE3----------------")
+    for i in range (0,len(tempfile3),1):
+        print(len(tempfile3[i]), " - ", hex(len(tempfile3[i])))
+    print("----------------TABLE2----------------")
+    for i in range (0,len(tempfile2),1):
+        print(len(tempfile2[i]), " - ", hex(len(tempfile2[i])))
+    print("----------------TABLE1----------------")
+    for i in range (0,len(tempfile),1):
+        print(len(tempfile[i]), " - ", hex(len(tempfile[i])))
+    print("----------------EVEN----------------")
+    for i in range (0,len(even_tables),1):
+        print(len(even_tables[i]), " - ", hex(len(even_tables[i])))
+    print("----------------ODD----------------")
+    for i in range (0,len(odd_tables),1):
+        print(len(odd_tables[i]), " - ", hex(len(odd_tables[i])))
+
+    #Write the files back
+    for i in range(0, num_of_gfx_roms, 1):
+        FILE_LOC = os.path.join(gamepath, filename[i])
+        with open(FILE_LOC,"wb") as out:
+            out.write(bytes(tempfile[i]))
+    time.sleep(1)
 
 #//////////////////// START OF CASE CPS2 ////////////////////
 def CASE_CPS1():
-#Based on the interleaver by Born2SPD
+
 #///// INTERLEAVE DATA ///////////////
     if script_action == "1":
-    #Running theory is bytes are interleaved normally, and any file containing
-    #more bytes than other files in the group spill over to the next group, in the
-    #same offset. Example:
-#	ROM_LOAD64_BYTE( "lw_2.2b",   0x000000, 0x20000
-#	ROM_LOAD64_BYTE( "lw_1.2a",   0x000001, 0x20000
-#	ROM_LOAD64_WORD( "lw-08.9b",  0x000002, 0x80000
-#	ROM_LOAD64_BYTE( "lw_18.5e",  0x000004, 0x20000
-#	ROM_LOAD64_BYTE( "lw_17.5c",  0x000005, 0x20000
-#	ROM_LOAD64_BYTE( "lw_30.8h",  0x000006, 0x20000
-#	ROM_LOAD64_BYTE( "lw_29.8f",  0x000007, 0x20000
-    #Here, each file contains 0x020000 bytes, except the 3rd which has 0x080000. The file has 2 bytes taken from it for this
-    #group, but by the time the other files have been completely read, there is still 0x040000 left of the 3rd file to go. If
-    #we look at the next group:
-#	ROM_LOAD64_BYTE( "lw_4.3b",   0x100000, 0x20000
-#	ROM_LOAD64_BYTE( "lw_3.3a",   0x100001, 0x20000
-#	ROM_LOAD64_BYTE( "lw_20.7e",  0x100004, 0x20000
-#	ROM_LOAD64_BYTE( "lw_19.7c",  0x100005, 0x20000
-#	ROM_LOAD64_BYTE( "lw_32.9h",  0x100006, 0x20000
-#	ROM_LOAD64_BYTE( "lw_31.9f",  0x100007, 0x20000
-    #We can see the offset between 3a and 7e is 0x01 and 0x04. In the previous group, data was added to final output
-    #at offset 0x02 using 9b, so for this group, we keep adding to that specific bit using the remainder of the file,
-    #essentially having it so the first half of the file is read in the first group, and the second half in this one
-        print("Interleaving...")
-        total = 0
-#   First make a local copy of all the GFX ROMs
-        for i in range (0, num_of_gfx_roms, 1):
-            romname = os.path.join(gamepath, filename[i])
-            with open (romname, "rb") as rom:
-                gfx_copy[i] += rom.read(os.path.getsize(romname))
-                print(romname,"|| Length = ", len(gfx_copy[i]), " || ", hex(len(gfx_copy[i])), "|| Bytesize = ",res_file.rom_byte_size[i],  " || ID - ",res_file.group_indexes[i]-1)
-                total += len(gfx_copy[i])
-        print("TOTAL GFX SIZE = ", total, " - ", hex(total))
-#                print(len(gfx_copy[i]))
-        #Print Group data
-        off = 0
-        for i in range(0, len(res_file.group_size),1):
-            print("======GROUP_NUMBER======(",i+1,")")
-            print("size = ", res_file.group_size[i])
-            print("OFFSET - ", off)
-            for q in range(off, off + res_file.group_size[i],1):
-            
-                print("ROM - ", res_file.gfx_prefix[res_file.group_indexes[q]-1]," || BYTE_SIZE - ", res_file.rom_byte_size[res_file.group_indexes[q]-1]," || TABLE - ", res_file.split_table[q], " || ID = ", res_file.group_indexes[q]-1)
-#                print("BYTE_SIZE - ", res_file.rom_byte_size[res_file.group_indexes[q]-1])
-#                print("TABLE - ", res_file.split_table[res_file.group_indexes[q]-1])
-            off += res_file.group_size[i]
-        newcase()
-    #///// DE-INTERLEAVE DATA ////////////
+   #Grab data for the interleaved GFX file
+        grab_CPS1_ROM_Data()
+    #Next, assemble EVEN and ODD tables based on ROM layout
+        CPS1_Interleave_GFX_data()
+
+#///// DE-INTERLEAVE DATA ////////////
     if script_action == "2":
-        print("De-Interleaving...")
+    #Grab data from the interleaved GFX file
+        cps1_de_interleave1()
+
+
+#        print("----------------TABLE3----------------")
+#        for i in range (0,len(tempfile3),1):
+#            print(len(tempfile3[i]))
+#        print("----------------TABLE2----------------")
+#        for i in range (0,len(tempfile2),1):
+#            print(len(tempfile2[i]))
+#        print("----------------TABLE1----------------")
+#        for i in range (0,len(tempfile),1):
+#            print(len(tempfile[i]))
+#        print("----------------OUTPUT----------------")
+#        for i in range (0,len(gfx_table),1):
+#            print(len(gfx_table[i]))
+#        write_m_files()
 
 #//////////////////// END OF CASE CPS1 ////////////////////
 
@@ -1071,8 +1167,12 @@ if gfx_ok == 1:
     #Only Interleave GFX if there is GFX to interleave
         #Generate required tables to store data
             tempfile = {}
+            even_tables = {}
+            odd_tables = {}
             for i in range (0, num_of_gfx_roms, 1):
                 tempfile.update({i : []})
+                even_tables.update({i : []})
+                odd_tables.update({i : []})
             tempfile2 = {}
             for i in range (0, num_of_gfx_roms >> 1, 1):
                 tempfile2.update({i : []})
@@ -1082,9 +1182,9 @@ if gfx_ok == 1:
             if res_file.System == "CPS2":
                 CASE_CPS2()
             if res_file.System == "CPS1":
-                gfx_copy = {} #Used to speed up CPS1 interleaving
+                temp_counter = {}
                 for i in range (0, num_of_gfx_roms, 1):
-                    gfx_copy.update({i : []})
+                        temp_counter.update({i : 0})
                 CASE_CPS1()
 
 if prg_ok == 1:
